@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #fafaf9;
+  --color-surface: #ffffff;
+  --color-border: #e7e5e4;
+  --color-text: #1c1917;
+  --color-text-muted: #78716c;
+  --color-brand: #2563eb;
+  --color-brand-light: #3b82f6;
+  --color-brand-glow: rgba(37, 99, 235, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Progress bar animation */
+.progress-fill {
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Textarea auto-resize feel */
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Push prompt animation */
+@keyframes pushSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.push-prompt {
+  animation: pushSlideIn 0.3s ease-out;
+}
+
+/* Section transition */
+@keyframes sectionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-enter {
+  animation: sectionFadeIn 0.4s ease-out;
+}
+
+/* File upload zone */
+.upload-zone {
+  border: 2px dashed var(--color-border);
+  transition: all 0.2s ease;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--color-brand);
+  background: var(--color-brand-glow);
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-blue-600 text-white font-medium px-6 py-3 rounded-lg transition-all;
+}
+
+.btn-primary:hover {
+  @apply bg-blue-700;
+}
+
+.btn-primary:disabled {
+  @apply bg-stone-300 text-stone-500 cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply bg-white text-stone-700 font-medium px-6 py-3 rounded-lg border border-stone-300 transition-all;
+}
+
+.btn-secondary:hover {
+  @apply bg-stone-50 border-stone-400;
+}
+
+/* Chat message entry animation */
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-enter {
+  animation: messageSlideIn 0.25s ease-out;
+}
+
+/* Typing indicator dots */
+@keyframes typingPulse {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.typing-dot {
+  animation: typingPulse 1.2s infinite ease-in-out;
+}
