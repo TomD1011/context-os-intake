@@ -8,6 +8,7 @@ const nextConfig = {
   experimental: {
     outputFileTracingIncludes: {
       '/api/chat': ['./src/lib/system-prompt.md'],
+      '/api/review/[clientId]': ['./src/lib/review-prompt.md'],
     },
   },
 }

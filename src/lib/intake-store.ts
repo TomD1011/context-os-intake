@@ -96,7 +96,26 @@ export async function saveTurn(
 }
 
 /**
- * Mark the session complete and attach the final structured summary.
+ * Mark the session complete, attach the final structured summary, and
+ * hydrate the persistent client row (clients.client_brain).
+ *
+ * ───────────────────────────────────────────────────────────────────
+ * V1 TEMPORARY BEHAVIOUR — replace later
+ * ───────────────────────────────────────────────────────────────────
+ * 1. client_brain is OVERWRITTEN with the latest summary on every
+ *    completed intake. Historical summaries are preserved on
+ *    intake_sessions.summary, so nothing is lost — but this will
+ *    clobber manually-edited Brain fields once we add a Review/edit
+ *    UI. Replace with merge-aware update logic at that point.
+ *
+ * 2. Client identity is resolved by slugifying the business_name from
+ *    the summary and upserting on the unique `slug` column. This is
+ *    fragile — two founders with the same business_name collide, and
+ *    one founder who re-types their name differently on a second
+ *    intake will create a duplicate client row. Acceptable for V1
+ *    because Tom runs every intake. Replace later with manual client
+ *    selection at intake start, or admin-assign after completion.
+ * ───────────────────────────────────────────────────────────────────
  */
 export async function completeSession(
   sessionId: string,
@@ -106,11 +125,39 @@ export async function completeSession(
   const sb = getSupabase()
   if (!sb) return
 
-  // Best-effort: pull business_name out of the summary for quick lookup.
-  const businessName =
-    (summary as { context?: { business_name?: string } })?.context
-      ?.business_name ?? null
+  // Pull business_name + owner out of the summary.
+  const ctx = (summary as { context?: { business_name?: string; owner?: string } })
+    ?.context
+  const businessName = ctx?.business_name ?? null
+  const ownerName = ctx?.owner ?? null
 
+  // 1. Resolve-or-create the client (TEMP: slug-based match — see comment above).
+  let clientId: string | null = null
+  if (businessName) {
+    const slug = slugify(businessName)
+    const { data: client, error: clientErr } = await sb
+      .from('clients')
+      .upsert(
+        {
+          slug,
+          display_name: businessName,
+          owner_name: ownerName,
+          // TEMP: overwrite on every intake — see comment above.
+          client_brain: summary,
+        },
+        { onConflict: 'slug' }
+      )
+      .select('id')
+      .single()
+
+    if (clientErr) {
+      console.error('[intake-store] client upsert failed:', clientErr)
+    } else {
+      clientId = client?.id ?? null
+    }
+  }
+
+  // 2. Mark the intake complete and link it to the client.
   const { error } = await sb
     .from(TABLE)
     .update({
@@ -119,8 +166,22 @@ export async function completeSession(
       status: 'complete',
       completed_at: new Date().toISOString(),
       business_name: businessName,
+      client_id: clientId,
     })
     .eq('id', sessionId)
 
   if (error) console.error('[intake-store] completeSession failed:', error)
+}
+
+/**
+ * Cheap URL-safe slug. Used for V1 client identity matching.
+ * TEMP — see completeSession comment. Replace when manual client
+ * selection / admin assignment lands.
+ */
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
