@@ -76,6 +76,7 @@ export const INTAKE_TOOL: Anthropic.Tool = {
             'progression_triggers',
             'no_buy_process',
             'conversion_rate',
+            'time_to_cash',
             'referral_share',
           ]),
           delivery: stringObject([
@@ -85,7 +86,7 @@ export const INTAKE_TOOL: Anthropic.Tool = {
             'current_capacity',
           ]),
           team: stringObject(['who_works_on_it', 'next_hire', 'operating_rhythm']),
-          systems: stringObject(['tools_in_use', 'automations']),
+          systems: stringObject(['tools_in_use', 'automations', 'numbers_reviewed']),
           constraints: stringObject([
             'weekly_revenue_actions',
             'inconsistencies',
@@ -94,6 +95,7 @@ export const INTAKE_TOOL: Anthropic.Tool = {
             'unnecessary_dependency',
             'system_breakpoints',
             'what_has_been_tried',
+            'founder_perceived_bottleneck',
           ]),
           temporal: stringObject(['seasonality_and_milestones']),
         },

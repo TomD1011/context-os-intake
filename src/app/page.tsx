@@ -34,10 +34,10 @@ function WelcomeScreen({ onStart }: { onStart: () => void }) {
         Context OS Intake
       </h1>
       <p className="text-stone-500 text-lg leading-relaxed mb-3">
-        A guided conversation to extract the full operating context of your business — how you make money, how work happens, and where the system breaks.
+        A structured conversation that captures how your business actually runs — so we build the right system for it.
       </p>
       <p className="text-stone-400 text-base leading-relaxed mb-8">
-        Takes 15–25 minutes. Be specific in your answers. The better the inputs here, the better the system we build.
+        Takes 30–40 minutes. Be specific in your answers. The better the inputs here, the better the system we build.
       </p>
       <button onClick={onStart} className="btn-primary text-lg px-8 py-4">
         Begin Intake
