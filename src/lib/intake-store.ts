@@ -14,6 +14,7 @@
  */
 
 import { getSupabase } from './supabase'
+import { extractDomains } from './brain-domains'
 
 export type IntakeRole = 'user' | 'assistant'
 
@@ -135,6 +136,8 @@ export async function completeSession(
   let clientId: string | null = null
   if (businessName) {
     const slug = slugify(businessName)
+    const domains = extractDomains(summary)
+
     const { data: client, error: clientErr } = await sb
       .from('clients')
       .upsert(
@@ -144,6 +147,15 @@ export async function completeSession(
           owner_name: ownerName,
           // TEMP: overwrite on every intake — see comment above.
           client_brain: summary,
+          // V2: domain columns — each specialist agent reads only what it needs.
+          brain_identity: domains.brain_identity,
+          brain_revenue: domains.brain_revenue,
+          brain_customers: domains.brain_customers,
+          brain_acquisition: domains.brain_acquisition,
+          brain_operations: domains.brain_operations,
+          brain_constraints: domains.brain_constraints,
+          brain_connections: domains.brain_connections,
+          brain_version: '2.0',
         },
         { onConflict: 'slug' }
       )
