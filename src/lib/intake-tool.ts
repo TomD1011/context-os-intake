@@ -1,6 +1,8 @@
 /**
  * submit_intake_summary tool definition
- * Matches the Client Brain Template 10-domain schema defined in System Prompt.md
+ * V2.2 — Marketing OS extensions (10 May 2026)
+ * Matches the Client Brain Template 10-domain schema + Marketing OS extensions
+ * defined in src/lib/system-prompt.md
  */
 
 import type Anthropic from '@anthropic-ai/sdk'
@@ -10,6 +12,11 @@ const stringObject = (fields: string[]) => ({
   type: 'object' as const,
   properties: Object.fromEntries(fields.map((f) => [f, { type: 'string' }])),
   required: fields,
+})
+
+// Helper for fields that may be a value OR null (e.g. integer scores 1-5)
+const nullableField = (type: 'string' | 'integer') => ({
+  oneOf: [{ type }, { type: 'null' }],
 })
 
 export const INTAKE_TOOL: Anthropic.Tool = {
@@ -44,6 +51,9 @@ export const INTAKE_TOOL: Anthropic.Tool = {
             'structure',
             'owner',
             'endgame',
+            'origin_story',
+            'why_now',
+            'sacred_cows',
           ]),
           revenue_model: stringObject([
             'products_services',
@@ -70,15 +80,50 @@ export const INTAKE_TOOL: Anthropic.Tool = {
             'buying_trigger',
             'objections',
           ]),
-          acquisition: stringObject([
-            'lead_sources',
-            'full_flow',
-            'progression_triggers',
-            'no_buy_process',
-            'conversion_rate',
-            'time_to_cash',
-            'referral_share',
-          ]),
+          acquisition: {
+            type: 'object',
+            properties: {
+              lead_sources: { type: 'string' },
+              full_flow: { type: 'string' },
+              progression_triggers: { type: 'string' },
+              no_buy_process: { type: 'string' },
+              conversion_rate: { type: 'string' },
+              time_to_cash: { type: 'string' },
+              referral_share: { type: 'string' },
+              content_channels: {
+                type: 'array',
+                description:
+                  'Array of {platform, audience_size, frequency, what_works} for each platform the client posts on or has set up.',
+                items: { type: 'object' },
+              },
+              existing_assets: {
+                type: 'object',
+                description:
+                  'Existing marketing assets: {website_url, lead_magnets, sales_pages, social_handles, testimonials, ad_campaigns}',
+                properties: {
+                  website_url: { type: 'string' },
+                  lead_magnets: { type: 'array', items: { type: 'string' } },
+                  sales_pages: { type: 'array', items: { type: 'string' } },
+                  social_handles: { type: 'object' },
+                  testimonials: { type: 'array', items: { type: 'object' } },
+                  ad_campaigns: { type: 'array', items: { type: 'string' } },
+                },
+              },
+              past_failures: { type: 'string' },
+            },
+            required: [
+              'lead_sources',
+              'full_flow',
+              'progression_triggers',
+              'no_buy_process',
+              'conversion_rate',
+              'time_to_cash',
+              'referral_share',
+              'content_channels',
+              'existing_assets',
+              'past_failures',
+            ],
+          },
           delivery: stringObject([
             'unit_of_delivery',
             'how_work_happens',
@@ -137,6 +182,136 @@ export const INTAKE_TOOL: Anthropic.Tool = {
         required: ['objections_seed', 'pipeline_seed'],
       },
 
+      // ============================================================
+      // V2.2 Marketing OS extensions (added 10 May 2026)
+      // ============================================================
+
+      offer_architecture: {
+        type: 'object',
+        description:
+          'The offer in marketing-production detail: mechanism, value equation, guarantee, amplifiers, ladder.',
+        properties: {
+          mechanism_name: { type: 'string' },
+          offer_one_liner: { type: 'string' },
+          value_equation: stringObject([
+            'outcome',
+            'likelihood',
+            'risk',
+            'time_delay',
+          ]),
+          guarantee: stringObject(['text', 'terms']),
+          offer_amplifiers: {
+            type: 'object',
+            description:
+              '8 amplifiers: focused_audience, results_oriented, tangible_life_impact, polarising_message, unique_method, time_bound_result, guaranteed_safety, pricing_easy_start',
+          },
+          product_ladder: {
+            type: 'object',
+            description:
+              'Four Product Empire structure: incentive, core, high_ticket, subscription',
+          },
+          price_anchors: { type: 'string' },
+          payment_options: { type: 'string' },
+        },
+        required: [
+          'mechanism_name',
+          'offer_one_liner',
+          'value_equation',
+          'guarantee',
+          'offer_amplifiers',
+          'product_ladder',
+          'price_anchors',
+          'payment_options',
+        ],
+      },
+
+      avatar_deep: {
+        type: 'object',
+        description:
+          'Avatar in copy-production depth: demographics, VoC quotes, daily frustrations, identity markers.',
+        properties: {
+          demographics: { type: 'object' },
+          psychographics: { type: 'object' },
+          pain_points_voc: { type: 'array', items: { type: 'string' } },
+          daily_frustrations: { type: 'string' },
+          what_keeps_them_awake: { type: 'string' },
+          hidden_fears: { type: 'string' },
+          humiliations: { type: 'string' },
+          what_they_complain_about: { type: 'string' },
+          dream_outcomes_voc: { type: 'array', items: { type: 'string' } },
+          what_they_want_more_than_anything: { type: 'string' },
+          cost_of_inaction: { type: 'string' },
+          how_they_describe_themselves: { type: 'string' },
+          who_they_aspire_to_be: { type: 'string' },
+          channels_consumed: { type: 'array', items: { type: 'object' } },
+          influencers_followed: { type: 'string' },
+          competitors_compared: { type: 'string' },
+          voc_quotes_raw: { type: 'array', items: { type: 'string' } },
+        },
+        required: [
+          'demographics',
+          'psychographics',
+          'pain_points_voc',
+          'daily_frustrations',
+          'what_keeps_them_awake',
+          'hidden_fears',
+          'humiliations',
+          'what_they_complain_about',
+          'dream_outcomes_voc',
+          'what_they_want_more_than_anything',
+          'cost_of_inaction',
+          'how_they_describe_themselves',
+          'who_they_aspire_to_be',
+          'channels_consumed',
+          'influencers_followed',
+          'competitors_compared',
+          'voc_quotes_raw',
+        ],
+      },
+
+      voice_tone: {
+        type: 'object',
+        description:
+          'Voice capture for bot mimicry: 5 projective Qs, voice samples, anti-voice, register.',
+        properties: {
+          camera_for_a_week: { type: 'string' },
+          rant_about: { type: 'string' },
+          story_told_often: { type: 'string' },
+          audience_feel: { type: 'string' },
+          voice_actor: { type: 'string' },
+          voice_samples: {
+            type: 'array',
+            description:
+              'Array of {source_url, content, type: post|email|transcript|about_page}',
+            items: { type: 'object' },
+          },
+          anti_voice_samples: {
+            type: 'array',
+            description: 'Array of {source, content, why_avoid}',
+            items: { type: 'object' },
+          },
+          banned_phrases: { type: 'array', items: { type: 'string' } },
+          register_formal_casual: nullableField('integer'),
+          jargon_level: nullableField('integer'),
+          sentence_rhythm_preference: { type: 'string' },
+          signature_phrases: { type: 'array', items: { type: 'string' } },
+        },
+        required: [
+          'camera_for_a_week',
+          'rant_about',
+          'story_told_often',
+          'audience_feel',
+          'voice_actor',
+          'voice_samples',
+          'anti_voice_samples',
+          'banned_phrases',
+          'register_formal_casual',
+          'jargon_level',
+          'sentence_rhythm_preference',
+          'signature_phrases',
+        ],
+      },
+
       sources: {
         type: 'array',
         description:
@@ -161,6 +336,9 @@ export const INTAKE_TOOL: Anthropic.Tool = {
       'business',
       'marketing',
       'sales',
+      'offer_architecture',
+      'avatar_deep',
+      'voice_tone',
       'sources',
       'additional_context',
       'unresolved_gaps',
@@ -174,11 +352,88 @@ export type IntakeSummary = {
   _completed_at: string
   _brain_schema: string
   context: Record<string, string>
-  business: Record<string, Record<string, string>>
+  business: {
+    identity: Record<string, string>
+    revenue_model: Record<string, string>
+    financials: Record<string, string>
+    customer_reality: Record<string, string>
+    acquisition: {
+      lead_sources: string
+      full_flow: string
+      progression_triggers: string
+      no_buy_process: string
+      conversion_rate: string
+      time_to_cash: string
+      referral_share: string
+      content_channels: Array<Record<string, unknown>>
+      existing_assets: {
+        website_url: string
+        lead_magnets: string[]
+        sales_pages: string[]
+        social_handles: Record<string, string>
+        testimonials: Array<Record<string, unknown>>
+        ad_campaigns: string[]
+      }
+      past_failures: string
+    }
+    delivery: Record<string, string>
+    team: Record<string, string>
+    systems: Record<string, string>
+    constraints: Record<string, string>
+    temporal: Record<string, string>
+  }
   marketing: { voice: { voice_notes: string } }
   sales: {
     objections_seed: { common_objections: string }
     pipeline_seed: Record<string, string>
+  }
+  offer_architecture: {
+    mechanism_name: string
+    offer_one_liner: string
+    value_equation: {
+      outcome: string
+      likelihood: string
+      risk: string
+      time_delay: string
+    }
+    guarantee: { text: string; terms: string }
+    offer_amplifiers: Record<string, unknown>
+    product_ladder: Record<string, unknown>
+    price_anchors: string
+    payment_options: string
+  }
+  avatar_deep: {
+    demographics: Record<string, unknown>
+    psychographics: Record<string, unknown>
+    pain_points_voc: string[]
+    daily_frustrations: string
+    what_keeps_them_awake: string
+    hidden_fears: string
+    humiliations: string
+    what_they_complain_about: string
+    dream_outcomes_voc: string[]
+    what_they_want_more_than_anything: string
+    cost_of_inaction: string
+    how_they_describe_themselves: string
+    who_they_aspire_to_be: string
+    channels_consumed: Array<Record<string, unknown>>
+    influencers_followed: string
+    competitors_compared: string
+    voc_quotes_raw: string[]
+  }
+  voice_tone: {
+    camera_for_a_week: string
+    rant_about: string
+    story_told_often: string
+    audience_feel: string
+    voice_actor: string
+    voice_samples: Array<Record<string, unknown>>
+    anti_voice_samples: Array<Record<string, unknown>>
+    banned_phrases: string[]
+    register_formal_casual: number | null
+    jargon_level: number | null
+    sentence_rhythm_preference: string
+    signature_phrases: string[]
   }
   sources: Array<Record<string, unknown>>
   additional_context: string
