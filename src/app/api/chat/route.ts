@@ -263,24 +263,15 @@ function applyHistoryCacheBreakpoint(
   return messages.map((msg, i) => {
     if (i !== lastAssistantIdx) return msg as Anthropic.MessageParam
 
-    // Wrap the boundary message's content as a content block with
-    // cache_control. Anthropic accepts either a string or an array of
-    // content blocks per message.
-    const content =
-      typeof msg.content === 'string'
-        ? [
-            {
-              type: 'text' as const,
-              text: msg.content,
-              cache_control: { type: 'ephemeral' as const },
-            },
-          ]
-        : // If already array-form, mark the last block.
-          msg.content.map((block, j, arr) =>
-            j === arr.length - 1
-              ? { ...block, cache_control: { type: 'ephemeral' as const } }
-              : block
-          )
+    // Wrap the boundary message's string content as a single text block with
+    // cache_control. IntakeMessage.content is always string per intake-store.ts.
+    const content = [
+      {
+        type: 'text' as const,
+        text: msg.content,
+        cache_control: { type: 'ephemeral' as const },
+      },
+    ]
 
     return { role: msg.role, content } as Anthropic.MessageParam
   })
