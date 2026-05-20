@@ -15,9 +15,15 @@ export const runtime = 'nodejs'
 // 60s on Pro. This bumps both.
 export const maxDuration = 60
 
+// Quality-first rule (21 May 2026): Sonnet on every turn. The intake becomes
+// the FounderOS brain — thin synthesis here propagates to every downstream
+// asset. Token savings come from prompt caching + output budget, not model
+// downgrading. Revisit Haiku only after a quality baseline exists.
 const MODEL = 'claude-sonnet-4-6'
+const FOLLOW_UP_MODEL = 'claude-sonnet-4-6'
 const MAX_TOKENS = 4096
-const FOLLOW_UP_MAX_TOKENS = 1024
+// Follow-up call only generates a 1-sentence closing message. 256 is plenty.
+const FOLLOW_UP_MAX_TOKENS = 256
 
 // The system prompt lives inside the app so it deploys with the build.
 // Next.js's file tracing picks it up automatically because this module
@@ -86,12 +92,35 @@ export async function POST(request: NextRequest) {
         // persist it to the URL for resume.
         if (sessionId) send({ type: 'session', session_id: sessionId })
 
+        // Prompt caching — system prompt + tool schema are static across the
+        // intake, so cache them. Cached input tokens cost ~10% of fresh tokens
+        // ($0.30/MTok vs $3/MTok on Sonnet). Saves roughly 5x on input spend
+        // for a 30-turn intake. Cache TTL is 5 min by default.
+        //
+        // Message history caching: we mark the LAST message before the new
+        // user turn with cache_control. Every prior turn becomes a cache hit
+        // on the next request, saving another ~30-50% on input across the
+        // intake. Anthropic allows up to 4 cache breakpoints; we use 3
+        // (system + tools + history boundary).
+        const cachedMessages = applyHistoryCacheBreakpoint(messages)
+
         const modelStream = anthropic.messages.stream({
           model: MODEL,
           max_tokens: MAX_TOKENS,
-          system: systemPrompt,
-          tools: [INTAKE_TOOL],
-          messages,
+          system: [
+            {
+              type: 'text',
+              text: systemPrompt,
+              cache_control: { type: 'ephemeral' },
+            },
+          ],
+          tools: [
+            {
+              ...INTAKE_TOOL,
+              cache_control: { type: 'ephemeral' },
+            },
+          ],
+          messages: cachedMessages,
         })
 
         // Accumulate assistant text as it streams so we can persist the final
@@ -117,10 +146,21 @@ export async function POST(request: NextRequest) {
         if (toolUseBlock && toolUseBlock.name === 'submit_intake_summary') {
           // Second round-trip (non-streamed — short, just a closing message)
           const followUp = await anthropic.messages.create({
-            model: MODEL,
+            model: FOLLOW_UP_MODEL,
             max_tokens: FOLLOW_UP_MAX_TOKENS,
-            system: systemPrompt,
-            tools: [INTAKE_TOOL],
+            system: [
+              {
+                type: 'text',
+                text: systemPrompt,
+                cache_control: { type: 'ephemeral' },
+              },
+            ],
+            tools: [
+              {
+                ...INTAKE_TOOL,
+                cache_control: { type: 'ephemeral' },
+              },
+            ],
             messages: [
               ...messages,
               { role: 'assistant', content: finalMessage.content },
@@ -189,6 +229,60 @@ export async function POST(request: NextRequest) {
       'Cache-Control': 'no-cache, no-transform',
       'X-Accel-Buffering': 'no',
     },
+  })
+}
+
+/**
+ * Mark the most recent assistant message with cache_control so all prior
+ * turns become a cacheable prefix on the next request. The current user
+ * message stays uncached (it's new every time). Returns a fresh array with
+ * the marked message wrapped in the content-blocks form Anthropic requires.
+ *
+ * Falls back to the original messages array if there's no assistant message
+ * to mark (i.e. first turn of a session).
+ */
+function applyHistoryCacheBreakpoint(
+  messages: IntakeMessage[]
+): Anthropic.MessageParam[] {
+  // Find the last assistant message index — that's our cache boundary.
+  let lastAssistantIdx = -1
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'assistant') {
+      lastAssistantIdx = i
+      break
+    }
+  }
+
+  // First turn (no assistant message yet) — no cache breakpoint to apply.
+  if (lastAssistantIdx === -1) {
+    return messages as Anthropic.MessageParam[]
+  }
+
+  // Build the new array. Everything before/at the boundary is unchanged
+  // except the boundary message itself, which gets cache_control.
+  return messages.map((msg, i) => {
+    if (i !== lastAssistantIdx) return msg as Anthropic.MessageParam
+
+    // Wrap the boundary message's content as a content block with
+    // cache_control. Anthropic accepts either a string or an array of
+    // content blocks per message.
+    const content =
+      typeof msg.content === 'string'
+        ? [
+            {
+              type: 'text' as const,
+              text: msg.content,
+              cache_control: { type: 'ephemeral' as const },
+            },
+          ]
+        : // If already array-form, mark the last block.
+          msg.content.map((block, j, arr) =>
+            j === arr.length - 1
+              ? { ...block, cache_control: { type: 'ephemeral' as const } }
+              : block
+          )
+
+    return { role: msg.role, content } as Anthropic.MessageParam
   })
 }
 

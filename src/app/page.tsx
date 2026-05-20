@@ -234,53 +234,15 @@ function ChatInput({
 // SUMMARY SCREEN (shown after submit_intake_summary fires)
 // ─────────────────────────────────────────────
 
-function SummaryScreen({
-  summary,
-  onRestart,
-}: {
+function SummaryScreen(_props: {
+  // intentionally unused — summary is captured server-side; the user does NOT
+  // see it. We render a thank-you only. Props kept for caller compatibility.
   summary: IntakeSummary
   onRestart: () => void
 }) {
-  const [copied, setCopied] = useState(false)
-  const json = JSON.stringify(summary, null, 2)
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(json)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // Clipboard blocked — fall through silently
-    }
-  }, [json])
-
-  const handleDownload = useCallback(() => {
-    const businessName =
-      (summary as { context?: { business_name?: string } })?.context
-        ?.business_name || 'intake'
-    const safeName = String(businessName)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-      .slice(0, 40) || 'intake'
-    const stamp = new Date().toISOString().slice(0, 10)
-    const filename = `context-os-intake__${safeName}__${stamp}.json`
-
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }, [json, summary])
-
   return (
     <div className="section-enter pt-2 pb-8">
-      {/* Completion card */}
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6 mb-6">
+      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-8 mb-6">
         <div className="flex items-start gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
             <svg
@@ -298,85 +260,14 @@ function SummaryScreen({
             </svg>
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-serif font-bold text-stone-900 mb-1">
-              Intake complete
+            <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
+              Thanks, great work.
             </h2>
-            <p className="text-stone-500 text-sm leading-relaxed">
-              Your structured context has been captured. Download the JSON below
-              and send it to your FounderOS operator, or copy it to your
-              clipboard.
+            <p className="text-stone-700 text-base leading-relaxed">
+              Your intake is complete. Tom will review it and be in touch within the next 24 hours.
             </p>
           </div>
         </div>
-
-        <div className="flex flex-wrap gap-3 mb-6">
-          <button
-            onClick={handleDownload}
-            className="btn-primary inline-flex items-center gap-2"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"
-              />
-            </svg>
-            Download JSON
-          </button>
-          <button
-            onClick={handleCopy}
-            className="btn-secondary inline-flex items-center gap-2"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-              />
-            </svg>
-            {copied ? 'Copied' : 'Copy to clipboard'}
-          </button>
-          <button
-            onClick={onRestart}
-            className="text-sm text-stone-500 hover:text-stone-800 transition-colors px-3 py-2"
-          >
-            Start a new intake
-          </button>
-        </div>
-
-        <details className="group">
-          <summary className="cursor-pointer text-sm font-medium text-stone-700 hover:text-stone-900 select-none flex items-center gap-2">
-            <svg
-              className="w-4 h-4 transition-transform group-open:rotate-90"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-            Preview JSON
-          </summary>
-          <pre className="mt-3 bg-stone-50 border border-stone-200 rounded-lg p-4 text-xs text-stone-700 overflow-x-auto max-h-96 overflow-y-auto">
-            {json}
-          </pre>
-        </details>
       </div>
     </div>
   )

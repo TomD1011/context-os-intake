@@ -1,8 +1,9 @@
 /**
  * submit_intake_summary tool definition
- * V2.2 — Marketing OS extensions (10 May 2026)
+ * V2.4 — Sales OS extensions (21 May 2026)
  * Matches the Client Brain Template 10-domain schema + Marketing OS extensions
- * defined in src/lib/system-prompt.md
+ * (V2.2, 10 May 2026) + Sales OS extensions (V2.4, 21 May 2026) defined in
+ * src/lib/system-prompt.md
  */
 
 import type Anthropic from '@anthropic-ai/sdk'
@@ -247,6 +248,12 @@ export const INTAKE_TOOL: Anthropic.Tool = {
           influencers_followed: { type: 'string' },
           competitors_compared: { type: 'string' },
           voc_quotes_raw: { type: 'array', items: { type: 'string' } },
+          objection_voc: {
+            type: 'array',
+            description:
+              'Verbatim objection phrases prospects use when not buying (Q4.6). Use exact words, not summaries.',
+            items: { type: 'string' },
+          },
         },
         required: [
           'demographics',
@@ -266,6 +273,7 @@ export const INTAKE_TOOL: Anthropic.Tool = {
           'influencers_followed',
           'competitors_compared',
           'voc_quotes_raw',
+          'objection_voc',
         ],
       },
 
@@ -312,6 +320,50 @@ export const INTAKE_TOOL: Anthropic.Tool = {
         ],
       },
 
+      // ============================================================
+      // V2.4 Sales OS extensions (added 21 May 2026)
+      // ============================================================
+
+      sales_machine: {
+        type: 'object',
+        description:
+          'Sales motion in delivery-production detail: script, closing language, qualification criteria, follow-up cadence, pipeline visibility. Sales OS bot consumes this to generate NEPQ-aligned scripts, pipeline configs, and follow-up sequences.',
+        properties: {
+          sales_script: {
+            type: 'string',
+            description:
+              'Q5.11 — Either the script text (if pasted), a reference to an uploaded file ("see Sales Script v3.pdf"), or a walk-through of how a typical sales conversation goes if no script exists.',
+          },
+          closing_language: {
+            type: 'string',
+            description:
+              'Q5.12 — The exact line/phrase the founder uses to move a prospect from interested to committed. Word-for-word preferred. Walk-through fallback acceptable.',
+          },
+          qualification_criteria: {
+            type: 'string',
+            description:
+              'Q5.13 — The filters the founder uses to decide a lead is worth pursuing (budget, timeline, role, business size, decision authority). Becomes the qualification logic in Sales OS pipeline config.',
+          },
+          followup_cadence: {
+            type: 'string',
+            description:
+              'Q5.14 — Structured follow-up sequence: day-by-day what is sent, what channel, what trigger. Becomes the Sales OS follow-up sequence template.',
+          },
+          pipeline_visibility: {
+            type: 'string',
+            description:
+              'Q5.15 — Current state of pipeline measurement: where data lives, who looks at it, how often, what decisions get made. Tells Sales OS what to add vs what already exists.',
+          },
+        },
+        required: [
+          'sales_script',
+          'closing_language',
+          'qualification_criteria',
+          'followup_cadence',
+          'pipeline_visibility',
+        ],
+      },
+
       sources: {
         type: 'array',
         description:
@@ -339,6 +391,7 @@ export const INTAKE_TOOL: Anthropic.Tool = {
       'offer_architecture',
       'avatar_deep',
       'voice_tone',
+      'sales_machine',
       'sources',
       'additional_context',
       'unresolved_gaps',
@@ -420,6 +473,14 @@ export type IntakeSummary = {
     influencers_followed: string
     competitors_compared: string
     voc_quotes_raw: string[]
+    objection_voc: string[]
+  }
+  sales_machine: {
+    sales_script: string
+    closing_language: string
+    qualification_criteria: string
+    followup_cadence: string
+    pipeline_visibility: string
   }
   voice_tone: {
     camera_for_a_week: string
