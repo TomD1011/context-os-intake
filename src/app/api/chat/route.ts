@@ -137,11 +137,48 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        const finalMessage = await modelStream.finalMessage()
+        let finalMessage = await modelStream.finalMessage()
 
-        const toolUseBlock = finalMessage.content.find(
+        let toolUseBlock = finalMessage.content.find(
           (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
         )
+
+        // ─── Tool-forcing safety net (V2.5) ──────────────────────────────
+        // The bot sometimes verbalises completion ("packaging it up", "that's
+        // everything") but skips the actual submit_intake_summary call.
+        // Detect this pattern and re-prompt with tool_choice required so the
+        // structured JSON gets captured instead of silently dropped.
+        if (!toolUseBlock && looksLikeCompletion(assistantText)) {
+          console.log('[chat] Completion signalled but no tool call — forcing.')
+          const forced = await anthropic.messages.create({
+            model: MODEL,
+            max_tokens: MAX_TOKENS,
+            system: [
+              {
+                type: 'text',
+                text: systemPrompt,
+                cache_control: { type: 'ephemeral' },
+              },
+            ],
+            tools: [
+              { ...INTAKE_TOOL, cache_control: { type: 'ephemeral' } },
+            ],
+            tool_choice: { type: 'tool', name: 'submit_intake_summary' },
+            messages: [
+              ...cachedMessages,
+              { role: 'assistant', content: finalMessage.content },
+              {
+                role: 'user',
+                content:
+                  'You signalled completion but did not call submit_intake_summary. Call the tool now with the complete JSON summary of everything captured so far. Do not output prose.',
+              },
+            ],
+          })
+          finalMessage = forced
+          toolUseBlock = finalMessage.content.find(
+            (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
+          )
+        }
 
         if (toolUseBlock && toolUseBlock.name === 'submit_intake_summary') {
           // Second round-trip (non-streamed — short, just a closing message)
@@ -275,6 +312,34 @@ function applyHistoryCacheBreakpoint(
 
     return { role: msg.role, content } as Anthropic.MessageParam
   })
+}
+
+/**
+ * Detect when the assistant has signalled "intake is done" in prose but did
+ * not call submit_intake_summary. Triggers the tool-forcing safety net.
+ *
+ * False positives are tolerable — the worst case is one extra tool call. False
+ * negatives lose data, so the regex leans permissive.
+ */
+function looksLikeCompletion(text: string): boolean {
+  if (!text || text.length < 20) return false
+  const t = text.toLowerCase()
+  const cues = [
+    "that's everything",
+    'thats everything',
+    'packaging it up',
+    'packaging up',
+    'wrapping up',
+    'wrap that up',
+    'tom will review',
+    'intake is complete',
+    'intake is done',
+    "we're done",
+    'were done',
+    'that wraps',
+    'all done',
+  ]
+  return cues.some((c) => t.includes(c))
 }
 
 function jsonError(message: string, status: number): Response {

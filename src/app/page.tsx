@@ -540,6 +540,55 @@ export default function IntakePage() {
       }
       if (isStreaming || isUploading || isComplete) return
 
+      // ─── V2.5: client-side pre-validation ────────────────────────────
+      // Catch obvious failures (wrong type, zero bytes, too large) BEFORE
+      // hitting the backend. Surface error as an inline chat message —
+      // not a bottom-of-page red banner the user might miss.
+      const ALLOWED_CLIENT = new Set([
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/json',
+        'text/plain',
+        'text/csv',
+        'text/markdown',
+        'image/png',
+        'image/jpeg',
+        'image/gif',
+        'image/webp',
+      ])
+      const MAX_MB = 20
+
+      const showInlineError = (msg: string) => {
+        const errMsg: Message = {
+          role: 'assistant',
+          content: `⚠️ Upload failed: ${msg}`,
+        }
+        setMessages((prev) => [...prev, errMsg])
+        setError(null) // we're showing it inline instead
+      }
+
+      if (file.size === 0) {
+        showInlineError(`"${file.name}" is empty (0 bytes).`)
+        return
+      }
+      if (file.size > MAX_MB * 1024 * 1024) {
+        const mb = (file.size / 1024 / 1024).toFixed(1)
+        showInlineError(`"${file.name}" is ${mb} MB. Max is ${MAX_MB} MB.`)
+        return
+      }
+      const detectedType = file.type || 'application/octet-stream'
+      if (!ALLOWED_CLIENT.has(detectedType)) {
+        showInlineError(
+          `"${file.name}" isn't a supported file type. Detected as "${detectedType}". Allowed: PDF, Word, Excel, PowerPoint, text, CSV, images. Try a different file, or paste the text into the chat.`
+        )
+        return
+      }
+
       setError(null)
       setIsUploading(true)
 
@@ -553,11 +602,12 @@ export default function IntakePage() {
         )
         const data = await res.json()
         if (!res.ok) {
-          throw new Error(data?.error || `upload failed (${res.status})`)
+          showInlineError(data?.error || `server rejected the file (${res.status})`)
+          return
         }
 
-        // Inject the upload as a user message so Claude can acknowledge it and
-        // include it in the sources array at the end.
+        // Inject the upload as a user message — this is the ONLY signal the
+        // bot uses to confirm a real upload (per V2.5 system prompt rule).
         const sizeKb = Math.max(1, Math.round((data.size_bytes ?? 0) / 1024))
         const announcement = `[Attached file: ${data.filename} — ${sizeKb} KB, ${data.content_type}. Stored as ${data.storage_path}.]`
 
@@ -570,14 +620,14 @@ export default function IntakePage() {
         try {
           await streamChat(next)
         } catch (err) {
-          setError(
-            err instanceof Error ? err.message : 'Failed to notify Claude.'
+          showInlineError(
+            err instanceof Error ? err.message : 'Failed to notify the bot.'
           )
         } finally {
           setIsStreaming(false)
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Upload failed.')
+        showInlineError(err instanceof Error ? err.message : 'Upload failed.')
       } finally {
         setIsUploading(false)
       }
