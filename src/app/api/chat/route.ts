@@ -174,7 +174,11 @@ export async function POST(request: NextRequest) {
               },
             ],
           })
-          finalMessage = forced
+          // Cast — modelStream.finalMessage() returns ParsedMessage<T> (with
+          // parsed_output), messages.create() returns bare Message. The .content
+          // shape is identical at runtime; TS just wants the assignment to be
+          // explicit because ParsedMessage has extra fields we don't use.
+          finalMessage = forced as typeof finalMessage
           toolUseBlock = finalMessage.content.find(
             (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
           )
