@@ -137,52 +137,11 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        let finalMessage = await modelStream.finalMessage()
+        const finalMessage = await modelStream.finalMessage()
 
-        let toolUseBlock = finalMessage.content.find(
+        const toolUseBlock = finalMessage.content.find(
           (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
         )
-
-        // ─── Tool-forcing safety net (V2.5) ──────────────────────────────
-        // The bot sometimes verbalises completion ("packaging it up", "that's
-        // everything") but skips the actual submit_intake_summary call.
-        // Detect this pattern and re-prompt with tool_choice required so the
-        // structured JSON gets captured instead of silently dropped.
-        if (!toolUseBlock && looksLikeCompletion(assistantText)) {
-          console.log('[chat] Completion signalled but no tool call — forcing.')
-          const forced = await anthropic.messages.create({
-            model: MODEL,
-            max_tokens: MAX_TOKENS,
-            system: [
-              {
-                type: 'text',
-                text: systemPrompt,
-                cache_control: { type: 'ephemeral' },
-              },
-            ],
-            tools: [
-              { ...INTAKE_TOOL, cache_control: { type: 'ephemeral' } },
-            ],
-            tool_choice: { type: 'tool', name: 'submit_intake_summary' },
-            messages: [
-              ...cachedMessages,
-              { role: 'assistant', content: finalMessage.content },
-              {
-                role: 'user',
-                content:
-                  'You signalled completion but did not call submit_intake_summary. Call the tool now with the complete JSON summary of everything captured so far. Do not output prose.',
-              },
-            ],
-          })
-          // Cast — modelStream.finalMessage() returns ParsedMessage<T> (with
-          // parsed_output), messages.create() returns bare Message. The .content
-          // shape is identical at runtime; TS just wants the assignment to be
-          // explicit because ParsedMessage has extra fields we don't use.
-          finalMessage = forced as typeof finalMessage
-          toolUseBlock = finalMessage.content.find(
-            (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
-          )
-        }
 
         if (toolUseBlock && toolUseBlock.name === 'submit_intake_summary') {
           // Second round-trip (non-streamed — short, just a closing message)
@@ -242,6 +201,27 @@ export async function POST(request: NextRequest) {
             summary: summaryInput,
             closing_text: closingText,
           })
+        } else if (looksLikeCompletion(assistantText)) {
+          // The bot verbalised completion ("packaging it up", "that's
+          // everything") but did NOT call submit_intake_summary. Previously we
+          // forced the summary inline here — a 60-120s call that exceeded
+          // maxDuration, dropped the connection ("Load failed"), and lost the
+          // brain because nothing was persisted first.
+          //
+          // New flow: persist this turn so the wrap-up is NEVER lost, then hand
+          // off to /api/complete (300s headroom) to generate + save the
+          // structured summary. The client calls it on `complete_pending`.
+          if (sessionId) {
+            const updatedMessages: IntakeMessage[] = [
+              ...messages,
+              { role: 'assistant', content: assistantText },
+            ]
+            await saveTurn(sessionId, updatedMessages)
+            send({ type: 'complete_pending', session_id: sessionId })
+          } else {
+            // No Supabase session to hand off to — nothing persists anyway.
+            send({ type: 'done' })
+          }
         } else {
           // Regular conversational turn — persist the latest history.
           if (sessionId && assistantText) {

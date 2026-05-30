@@ -45,3 +45,7 @@ next-env.d.ts
 # Supabase CLI temp files
 supabase/.temp/
 
+# Recovery script output — holds recovered client brains (client data). The
+# recovery scripts themselves are committed; their generated output is not.
+scripts/.recovered/
+

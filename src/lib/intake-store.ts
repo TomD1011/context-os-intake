@@ -127,10 +127,29 @@ export async function completeSession(
   if (!sb) return
 
   // Pull business_name + owner out of the summary.
+  //
+  // business_name fallback chain — the root cause of both Chris's and Tom's
+  // lost brains. The V2.4 schema nests the name under `context.business_name`,
+  // but older/edge summaries put it under `business.identity.business_name`.
+  // Reading only the first path returned null → no slug → no clients row, and
+  // the failure was swallowed silently. Resolve from either path before giving
+  // up so a populated summary always hydrates a client.
   const ctx = (summary as { context?: { business_name?: string; owner?: string } })
     ?.context
-  const businessName = ctx?.business_name ?? null
-  const ownerName = ctx?.owner ?? null
+  const identity = (
+    summary as { business?: { identity?: { business_name?: string; owner?: string } } }
+  )?.business?.identity
+  const businessName = ctx?.business_name || identity?.business_name || null
+  const ownerName = ctx?.owner || identity?.owner || null
+
+  if (!businessName) {
+    // Loud, not silent — a completed intake with no resolvable business_name is
+    // a data problem worth surfacing, not a quiet no-op (the old behaviour).
+    console.error(
+      '[intake-store] completeSession: no business_name in summary (checked context + business.identity) — clients row NOT created for session',
+      sessionId
+    )
+  }
 
   // 1. Resolve-or-create the client (TEMP: slug-based match — see comment above).
   let clientId: string | null = null
