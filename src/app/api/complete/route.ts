@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import fs from 'fs'
 import path from 'path'
 import { INTAKE_TOOL } from '@/lib/intake-tool'
+import { COMPLETION_INSTRUCTION } from '@/lib/completion-instruction'
 import { getSession, completeSession, type IntakeMessage } from '@/lib/intake-store'
 
 export const runtime = 'nodejs'
@@ -81,8 +82,7 @@ export async function POST(request: NextRequest) {
         ...(messages as Anthropic.MessageParam[]),
         {
           role: 'user',
-          content:
-            'The intake is complete. Call submit_intake_summary now with the full structured JSON for everything captured. Populate every required field; use "" and a matching unresolved_gaps entry for anything never answered. Pull Sales OS answers verbatim. Do not output prose.',
+          content: COMPLETION_INSTRUCTION,
         },
       ],
     })

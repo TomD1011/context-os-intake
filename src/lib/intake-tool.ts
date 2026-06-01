@@ -1,6 +1,8 @@
 /**
  * submit_intake_summary tool definition
- * V2.4 — Sales OS extensions (21 May 2026)
+ * V2.5 — Voice distillation (1 June 2026): banned_phrases / anti_voice_samples
+ *        distilled from the full voice signal + flagged when inferred.
+ *        Builds on V2.4 Sales OS extensions (21 May 2026).
  * Matches the Client Brain Template 10-domain schema + Marketing OS extensions
  * (V2.2, 10 May 2026) + Sales OS extensions (V2.4, 21 May 2026) defined in
  * src/lib/system-prompt.md
@@ -298,11 +300,21 @@ export const INTAKE_TOOL: Anthropic.Tool = {
             description: 'Array of {source, content, why_avoid}',
             items: { type: 'object' },
           },
-          banned_phrases: { type: 'array', items: { type: 'string' } },
+          banned_phrases: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              "Specific words, phrases, tones, or formats the founder would never use. Distil from the FULL voice signal — explicit lists (Q12.8), the rant_about answer, the anti_voice_samples, and clichés that contradict their own voice_samples — not only explicit lists. Prefer concrete phrases over abstract styles. Any entry you inferred (not stated verbatim by the founder) must also trigger an unresolved_gaps note. Never invent bans that are not grounded in the founder's input.",
+          },
           register_formal_casual: nullableField('integer'),
           jargon_level: nullableField('integer'),
           sentence_rhythm_preference: { type: 'string' },
-          signature_phrases: { type: 'array', items: { type: 'string' } },
+          signature_phrases: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'Recurring phrases, taglines, or constructions the founder actually uses. Lift verbatim from voice_samples and sign-offs.',
+          },
         },
         required: [
           'camera_for_a_week',

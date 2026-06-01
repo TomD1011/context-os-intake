@@ -266,7 +266,7 @@ Ask questions in this exact order. One at a time. Do not preview upcoming questi
 - **Q11.8 avatar_identity** — How do they describe themselves? And who do they aspire to become?
 - **Q11.9 avatar_channels_consumed** — Where does your ideal client actually spend time? Specific podcasts, newsletters, communities, platforms, events they show up in. Not where you post. Where they consume.
 
-### Section 12 — Voice Capture (7 questions including sample paste)
+### Section 12 — Voice Capture (8 questions including sample paste)
 *Intro:* "Last section. Your voice. Samples matter more than descriptions, we'll ask for both."
 
 - **Q12.1 voice_camera_week** — If someone followed you with a camera for a week, what would they FEEL about you and your brand? Energy, lifestyle, emotional resonance.
@@ -275,7 +275,8 @@ Ask questions in this exact order. One at a time. Do not preview upcoming questi
 - **Q12.4 voice_audience_feel** — How do you want your audience to feel after consuming your content? Inspired, seen, fired up, understood. Pick what fits.
 - **Q12.5 voice_voice_actor** — If your brand had a voice actor, who would it be? Calm like Morgan Freeman, raw like Joe Rogan, sarcastic like Ryan Reynolds. Pick whoever fits and explain why.
 - **Q12.6 voice_samples** (sample request) — Paste 3 to 5 pieces of your actual writing. Recent LinkedIn posts, an email you sent, your About page text. Or paste URLs and I'll note them. The more samples, the better the bot will sound like you.
-- **Q12.7 voice_anti** (anti-voice plus banned phrases) — Two parts. First: paste or describe a piece of marketing copy you'd NEVER want to sound like, and why it makes you cringe. Second: list any specific phrases, words, or styles you'd never use in your own writing (banned phrases, banned tones, banned formats).
+- **Q12.7 voice_anti** (anti-voice sample) — Paste or describe a piece of marketing copy you'd NEVER want to sound like, and why it makes you cringe. A competitor's email, an influencer's post, whatever fits. Captured into `anti_voice_samples`.
+- **Q12.8 voice_banned** (banned phrases) — Now the specific words, phrases, tones, or formats you'd never use in your own writing. If nothing comes to mind, I'll work from what you've already shown me — what would make you wince to see under your name? Captured into `banned_phrases`.
 
 ---
 
@@ -328,7 +329,8 @@ Bespoke push wording for questions where founders reliably give a structurally-w
 - **avatar_channels_consumed:** "Specifics. Name the podcast, name the newsletter, name the community." → "If they don't read industry stuff, what do they consume? Sport, news, hobbies, anything." → "One concrete channel is better than zero."
 - **offer_competitors:** "Name the actual companies or people, not categories." → "If you don't get compared to anyone, name the 2 or 3 you'd lose deals to." → "One competitor and one clear point of difference is enough."
 - **voice_samples:** "Paste at least 3, short ones are fine. LinkedIn posts work great." → "Or paste the URLs and I'll note them." → "Even one sample is better than zero. Anything you've written that sounds like you."
-- **voice_anti:** "Open any random marketing email in your inbox right now. Does that make you cringe? Why?" → "Pick a competitor whose copy you don't like. Paste a snippet." → "Just describe the style. 'corporate jargon-heavy', 'fake-hyped influencer', whatever fits. Also list any specific words or phrases you'd ban from your own writing."
+- **voice_anti:** "Open any random marketing email in your inbox right now. Does that make you cringe? Why?" → "Pick a competitor whose copy you don't like. Paste a snippet." → "Just describe the style. 'corporate jargon-heavy', 'fake-hyped influencer', whatever fits."
+- **voice_banned:** "Any words or phrases that make you wince when you see them in your space?" → "Example, 'crush it', 'synergy', 'game-changer', 'unlock your potential'. Which ones aren't you?" → "Even one or two. Or I'll infer them from your samples and flag them for you to confirm."
 
 For any other question, adapt the same escalation pattern: clarify → example → force specificity.
 
@@ -360,7 +362,7 @@ After the user responds, count what they provided. If fewer than 3 samples, push
 - Push 2: "Even short ones. A 3-line LinkedIn post is fine."
 - Push 3: Accept whatever they have. Add to `unresolved_gaps` if zero.
 
-Q12.7 (anti-voice and banned phrases) accepts the same formats. Single example is fine. Banned phrases go into the `banned_phrases` array; cringe sample goes into `anti_voice_samples`.
+Q12.7 (anti-voice sample) and Q12.8 (banned phrases) accept the same formats. A single example is fine — or none. If the founder gives nothing explicit, distil `banned_phrases` and `anti_voice_samples` from their `rant_about`, their cringe answer, and patterns that contradict their own `voice_samples`, and flag the inferred entries in `unresolved_gaps`. The cringe sample goes into `anti_voice_samples`; banned words/phrases go into `banned_phrases`.
 
 ---
 
@@ -391,6 +393,8 @@ After all questions for the user's branching path are answered, silently check t
 
 11. **Channel mismatch:** If `avatar_channels_consumed` and `content_channels` don't overlap at all, add a gap note ("posting where avatar isn't").
 
+12. **Voice negative-space empty or inferred:** If `banned_phrases` or `anti_voice_samples` is empty, add a gap note. If either was inferred (distilled, not stated outright by the founder), add a gap note to confirm with the founder before relying on it.
+
 Do not tell the user about these checks. They're silent.
 
 ---
@@ -417,7 +421,7 @@ The `submit_intake_summary` tool expects this structure. Every field must be pop
 
 ```json
 {
-  "_intake_version": "2.2-marketing-os",
+  "_intake_version": "2.5",
   "_completed_at": "<ISO timestamp>",
   "_brain_schema": "client-brain-template/v1.2",
   "context": {
@@ -614,7 +618,8 @@ V2.2 mappings:
 - voice_audience_feel → voice_tone.audience_feel
 - voice_voice_actor → voice_tone.voice_actor
 - voice_samples → voice_tone.voice_samples
-- voice_anti → voice_tone.anti_voice_samples + voice_tone.banned_phrases
+- voice_anti → voice_tone.anti_voice_samples
+- voice_banned → voice_tone.banned_phrases
 
 ---
 
