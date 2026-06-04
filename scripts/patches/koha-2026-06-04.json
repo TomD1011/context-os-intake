@@ -1,0 +1,35 @@
+{
+  "slug": "koha-fitness-and-health-club",
+  "note": "Sync the 2 June 2026 hand-corrections from the working-copy Client Brain.md into Supabase so re-export is safe. (1) Sales Machine rewritten from the stale 'no system' perception to what actually exists (Tom built Chris a manual Sales OS in the Notion Delivery Hub). (2) Selling Posture rule appended to the Voice section. Scope is limited to the fields actually hand-edited in the working copy — Acquisition/Constraints/Delivery still carry stale 'no follow-up/no CRM' lines and are a separate open correction (Brain Update List A.1).",
+  "brain_version": "2.1",
+  "sets": [
+    {
+      "path": "sales_machine.sales_script",
+      "value": "Several built and in use (Notion Delivery Hub): Reactivation Call Script v3 (5-stage NEPQ for lapsed members, job = book a free Reset Session), Coach Close Script (6-stage NEPQ moving Reset Session → $197 6-Week Challenge), Objection Handlers (6 common phone pushbacks), Corporate Outreach Conversation Guide (Stages 1–2; Stage 3 meeting script still a placeholder). Genuine gap: no front-door / walk-in / new-enquiry conversion script for turning a fresh tour or inbound enquiry into a membership — the highest-leverage moment given the door-volume constraint."
+    },
+    {
+      "path": "sales_machine.closing_language",
+      "value": "In place via the Coach Close Script — staged transition from Reset Session to the $197 Challenge, with a Day-3 intervention and a membership seed/close at weeks 5–6."
+    },
+    {
+      "path": "sales_machine.followup_cadence",
+      "value": "Multiple assets live: Susie's Daily SOP (start-of-day / call block / end-of-day Slack report / Friday tracker update), Email Follow-Up Template (when a prospect asks for info in writing), 3-email Reactivation Sequence for the 627 email-only contacts (built, pending Kit go-live), Gift-It referral email (same-day on Slack flag). Genuine gap: no single consolidated cadence doc and no documented dead-lead criteria."
+    },
+    {
+      "path": "sales_machine.pipeline_visibility",
+      "value": "In place. Weekly Snapshot (Nicky fills Friday EOD, Chris reviews Monday), Weekly Reactivation Tracker, 6-Week Challenge Tracker (sign-up → membership conversion). Master Call List holds 7,305 records, segmented (6,098 callable / 627 email-only / 580 no-contact / 26 do-not-call) with status/outcome/follow-up columns. Genuine gap: no documented Pipeline Architecture (stages + movement rules written down) and no defined CRM data model — stages currently live implicitly inside scripts and trackers; GymMaster (membership) is the only system, described as clunky."
+    },
+    {
+      "path": "sales_machine.qualification_criteria",
+      "value": "Partial. Qualifying is embedded inside the call scripts (situation/problem questions; constraint-finding in the close) and the Master Call List colour-coding (red = do-not-call, green = current member). Genuine gap: no standalone qualification framework defining who to pursue."
+    }
+  ],
+  "appends": [
+    {
+      "path": "marketing.voice.voice_notes",
+      "skipIfContains": "Selling posture",
+      "separator": "\n\n",
+      "value": "Selling posture (added 2 June 2026): Lead with empathy, care, and love — always, in every piece. Koha sells low-pressure, but low-pressure does NOT mean timid. A caring push is welcome — and kind — when it's clearly for the reader's benefit and wrapped in empathy first. The energy is a good friend who cares enough to be honest: \"I know it's hard, I know you've thought about this before — if not now, then when?\" Empathy first, then the gentle challenge. The push must always read as care, never as a salesperson. Apply this to all Koha marketing and sales copy."
+    }
+  ]
+}
