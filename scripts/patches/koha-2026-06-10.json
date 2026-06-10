@@ -1,0 +1,19 @@
+{
+  "slug": "koha-fitness-and-health-club",
+  "note": "Close the two gaps found by the 10 June 2026 OS Stack audit's markdown-vs-Supabase diff. (1) The 9 June patch NOTE claimed the $35->$33 price correction but its sets list never carried the field — business.revenue_model.avg_monthly_value still said $35/wk ($70/fn) in Supabase while the markdown (and all 61 swept Koha files) say $33/wk ($66/fn), Chris-confirmed 9 June. (2) The 4 June 'Avatar framing calibration' hand-edit was never patched into Supabase at all — appended to marketing.voice.voice_notes alongside the Selling posture rule. Markdown remains the prose source of truth; this makes the DB safe for any reader (dashboard, future agents, re-export).",
+  "brain_version": "2.3",
+  "sets": [
+    {
+      "path": "business.revenue_model.avg_monthly_value",
+      "value": "$33 per week / $66 per fortnight per member (corrected 9 June 2026, Chris-confirmed — single price; was $35/$70)"
+    }
+  ],
+  "appends": [
+    {
+      "path": "marketing.voice.voice_notes",
+      "skipIfContains": "Avatar framing calibration",
+      "separator": "\n\n",
+      "value": "Avatar framing calibration (added 4 June 2026): Frame the reader as CAPABLE, not in decline. They are capable professionals (some genuinely athletic) who want to STAY strong, sharp and active for the long game. Lead with aspiration (staying capable, doing what they love, showing up sharp), not fear. The hidden fears (losing capability, aging) are a light undercurrent only, never the lead. Do NOT make them seem older or more out of shape than they are. CORPORATE framing (energy, focus, performance, 'the engine that runs everything else') is a DIAL: lean in for some assets, out for others (the active-life angle). Not every piece is corporate. The avatar itself does not change (capable CBD professionals 35-70, menopausal-women cohort included); only the framing flexes. Do NOT lean on Chris's physiotherapy background in Koha brand copy: Chris is a physio by trade, but Koha is not a physiotherapist. That founder/personal angle belongs to Chris's personal brand, not Koha's marketing. The job is brand voice that CONVERTS (lead generation is the priority), reader as the hero, structured to sell, in Koha's warm voice."
+    }
+  ]
+}

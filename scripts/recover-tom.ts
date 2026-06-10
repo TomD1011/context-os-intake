@@ -104,7 +104,9 @@ async function main() {
 
   const { completeSession } = await import('../src/lib/intake-store.ts')
   console.log('\n💾 Running completeSession (updates intake_sessions + upserts clients)...')
-  await completeSession(SESSION_ID, session.messages, summary)
+  // forceBrainOverwrite: this script's whole job is an intentional rebuild —
+  // the BRAIN GUARD (10 June 2026) would otherwise refuse because the row has a brain.
+  await completeSession(SESSION_ID, session.messages, summary, { forceBrainOverwrite: true })
 
   const { data: client } = await sb
     .from('clients')

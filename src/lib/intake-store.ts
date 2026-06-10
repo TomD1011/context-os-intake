@@ -103,11 +103,14 @@ export async function saveTurn(
  * ───────────────────────────────────────────────────────────────────
  * V1 TEMPORARY BEHAVIOUR — replace later
  * ───────────────────────────────────────────────────────────────────
- * 1. client_brain is OVERWRITTEN with the latest summary on every
- *    completed intake. Historical summaries are preserved on
- *    intake_sessions.summary, so nothing is lost — but this will
- *    clobber manually-edited Brain fields once we add a Review/edit
- *    UI. Replace with merge-aware update logic at that point.
+ * 1. client_brain is written ONLY for new clients / empty brains (BRAIN
+ *    GUARD, 10 June 2026). When the client already has a non-empty brain,
+ *    the clients row is left untouched and the new summary lives on
+ *    intake_sessions.summary for a deliberate merge via import-brain.ts.
+ *    Recovery scripts pass forceBrainOverwrite to rebuild intentionally.
+ *    Full merge-aware update logic (per-field source + locked flags) is
+ *    still the V2 plan — the guard is the interim that makes re-intakes
+ *    safe instead of destructive.
  *
  * 2. Client identity is resolved by slugifying the business_name from
  *    the summary and upserting on the unique `slug` column. This is
@@ -121,7 +124,21 @@ export async function saveTurn(
 export async function completeSession(
   sessionId: string,
   messages: IntakeMessage[],
-  summary: Record<string, unknown>
+  summary: Record<string, unknown>,
+  opts: {
+    /**
+     * BRAIN GUARD OVERRIDE (added 10 June 2026). By default completeSession
+     * REFUSES to touch the clients row when that client already has a
+     * non-empty client_brain — re-running an intake must never clobber
+     * hand-patched brain fields (Koha's brain carries operator corrections
+     * applied via scripts/import-brain.ts; the old overwrite also silently
+     * reset brain_version to 2.0). The new summary is always preserved on
+     * intake_sessions.summary, so nothing is lost — merge it deliberately
+     * via the patch flow. Recovery scripts that intentionally rebuild a
+     * brain (recover-chris.ts / recover-tom.ts) pass forceBrainOverwrite.
+     */
+    forceBrainOverwrite?: boolean
+  } = {}
 ): Promise<void> {
   const sb = getSupabase()
   if (!sb) return
@@ -157,34 +174,69 @@ export async function completeSession(
     const slug = slugify(businessName)
     const domains = extractDomains(summary)
 
-    const { data: client, error: clientErr } = await sb
+    // BRAIN GUARD (10 June 2026): check whether this client already has a
+    // brain BEFORE writing anything. The old unconditional upsert overwrote
+    // client_brain + all 7 domain columns + reset brain_version to '2.0' on
+    // every completed intake — destroying hand-patched corrections invisibly.
+    const { data: existing, error: existErr } = await sb
       .from('clients')
-      .upsert(
-        {
-          slug,
-          display_name: businessName,
-          owner_name: ownerName,
-          // TEMP: overwrite on every intake — see comment above.
-          client_brain: summary,
-          // V2: domain columns — each specialist agent reads only what it needs.
-          brain_identity: domains.brain_identity,
-          brain_revenue: domains.brain_revenue,
-          brain_customers: domains.brain_customers,
-          brain_acquisition: domains.brain_acquisition,
-          brain_operations: domains.brain_operations,
-          brain_constraints: domains.brain_constraints,
-          brain_connections: domains.brain_connections,
-          brain_version: '2.0',
-        },
-        { onConflict: 'slug' }
-      )
-      .select('id')
-      .single()
+      .select('id, client_brain, brain_version')
+      .eq('slug', slug)
+      .maybeSingle()
 
-    if (clientErr) {
-      console.error('[intake-store] client upsert failed:', clientErr)
+    const hasBrain =
+      !!existing?.client_brain &&
+      typeof existing.client_brain === 'object' &&
+      Object.keys(existing.client_brain as object).length > 0
+
+    if (existErr) {
+      // Fail SAFE: if we can't read the existing state, refuse to write over
+      // a brain we couldn't see. The summary survives on intake_sessions.
+      console.error(
+        '[intake-store] BRAIN GUARD: existence check failed — refusing to write clients row blind. Summary preserved on intake_sessions.summary for session',
+        sessionId,
+        existErr
+      )
+    } else if (existing && hasBrain && !opts.forceBrainOverwrite) {
+      // Existing brain, no override: link the session, write NOTHING to clients.
+      clientId = existing.id
+      console.error(
+        `[intake-store] BRAIN GUARD: client "${slug}" already has a brain (version ${existing.brain_version ?? 'unknown'}) — intake summary NOT written to clients. ` +
+          `It is preserved on intake_sessions.summary (session ${sessionId}). ` +
+          `Merge deliberately via scripts/import-brain.ts, or pass forceBrainOverwrite for an intentional rebuild.`
+      )
     } else {
-      clientId = client?.id ?? null
+      // New client, empty brain, or explicit force: original V1 behaviour.
+      const { data: client, error: clientErr } = await sb
+        .from('clients')
+        .upsert(
+          {
+            slug,
+            display_name: businessName,
+            owner_name: ownerName,
+            // Overwrite is safe here: either no brain exists yet, or the
+            // caller explicitly forced a rebuild (recovery scripts).
+            client_brain: summary,
+            // V2: domain columns — each specialist agent reads only what it needs.
+            brain_identity: domains.brain_identity,
+            brain_revenue: domains.brain_revenue,
+            brain_customers: domains.brain_customers,
+            brain_acquisition: domains.brain_acquisition,
+            brain_operations: domains.brain_operations,
+            brain_constraints: domains.brain_constraints,
+            brain_connections: domains.brain_connections,
+            brain_version: '2.0',
+          },
+          { onConflict: 'slug' }
+        )
+        .select('id')
+        .single()
+
+      if (clientErr) {
+        console.error('[intake-store] client upsert failed:', clientErr)
+      } else {
+        clientId = client?.id ?? null
+      }
     }
   }
 

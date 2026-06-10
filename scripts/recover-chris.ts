@@ -110,7 +110,9 @@ async function main() {
     // Use the REAL completeSession — the path the production fix will harden.
     const { completeSession } = await import('../src/lib/intake-store.ts')
     log('💾 Running completeSession (updates intake_sessions + upserts clients)...')
-    await completeSession(SESSION_ID, session.messages, summary)
+    // forceBrainOverwrite: this script's whole job is an intentional rebuild —
+    // the BRAIN GUARD (10 June 2026) would otherwise refuse because the row has a brain.
+    await completeSession(SESSION_ID, session.messages, summary, { forceBrainOverwrite: true })
 
     // Verify the hydrated clients row.
     const bn = (summary as any)?.context?.business_name ?? ''
