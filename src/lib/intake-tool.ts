@@ -153,6 +153,7 @@ export const INTAKE_TOOL: Anthropic.Tool = {
             'ai_usage', // Q7.5 — current AI tool use + whether sensitive data is pasted in (usage + exposure)
             'sensitive_data', // Q7.6 — sensitive/regulated data held + storage/processing rules
             'data_accessibility', // Q7.7 (conditional) — how fast a clean customer/lead list can be produced; empty if already clear from tools/pipeline
+            'repeated_questions', // Q7.8 — repeated customer/team questions + where the answers currently live
           ]),
           constraints: stringObject([
             'weekly_revenue_actions',

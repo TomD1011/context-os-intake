@@ -91,6 +91,7 @@ export interface BrainOperations {
     ai_usage: string // Q7.5 — current AI tool use + data exposure
     sensitive_data: string // Q7.6 — sensitive/regulated data + storage rules
     data_accessibility: string // Q7.7 (conditional) — clean-list production time/source
+    repeated_questions: string // Q7.8 — repeated customer/team questions + where answers live
   }
 }
 
@@ -361,6 +362,7 @@ export function extractDomains(summary: Record<string, unknown>): BrainDomains {
         ai_usage: systems.ai_usage ?? '',
         sensitive_data: systems.sensitive_data ?? '',
         data_accessibility: systems.data_accessibility ?? '',
+        repeated_questions: systems.repeated_questions ?? '',
       },
     },
 

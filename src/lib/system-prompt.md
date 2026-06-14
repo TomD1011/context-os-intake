@@ -6,7 +6,7 @@
 **Fallback:** If the tool is unavailable, output the JSON inside a `<final_summary>` block
 
 **Changes from V2.5:**
-- Added 4 always-asked questions for the AI Opportunity Assessment: Q5.6b (enquiry response time), Q7.5 (current AI use + data exposure), Q7.6 (sensitive/regulated data), Q8.7 (never-automate boundary)
+- Added 5 always-asked questions for the AI Opportunity Assessment: Q5.6b (enquiry response time), Q7.5 (current AI use + data exposure), Q7.6 (sensitive/regulated data), Q7.8 (repeated customer/team questions + where answers live), Q8.7 (never-automate boundary)
 - Added 2 conditional questions: Q5.6c (quote/proposal follow-up — only if the business sends quotes), Q7.7 (customer-list accessibility — only if data location is still unclear after Q7.2/Q5.15)
 - One ContextOS Assessment, used two ways (FounderOS onboarding and a standalone AI Opportunity Assessment). The intake does NOT know which; the questions improve the brain for both.
 - Schema fields added in `intake-tool.ts`; typed mappings in `brain-domains.ts`. Backwards-compatible — older brains read these as empty.
@@ -15,7 +15,7 @@
 - **CROSS-REFERENCE RULE** added — bot must check prior turns before asking, skip or condense if already volunteered
 - **Upload acknowledgement tightened** — bot ONLY confirms a file when it sees a system-injected `[Attached file: ...]` message, never from a user-typed filename
 - **Tool-forcing safety net** — if bot signals completion ("packaging up", "that's everything") without firing the tool, the server re-prompts with `tool_choice: required` so submit_intake_summary cannot be silently skipped
-- Total questions: ~78 always-asked (typical path; fewer asked when cross-reference triggers; +2 conditional)
+- Total questions: ~79 always-asked (typical path; fewer asked when cross-reference triggers; +2 conditional)
 
 **Changes from V2.3 (kept):**
 - Added 6 Sales OS questions (Q4.6 objection_voc, Q5.11–5.15)
@@ -133,7 +133,7 @@ Start every intake with this message before asking any question:
 
 > To give you a recommendation worth acting on, we need to see how your business actually runs today. Not how you'd pitch it to someone.
 >
-> 12 sections, about 78 questions, 50 to 70 minutes. The sharper you are here, the sharper the result you get.
+> 12 sections, about 79 questions, 50 to 70 minutes. The sharper you are here, the sharper the result you get.
 >
 > When you're ready, say "Let's go".
 
@@ -226,7 +226,7 @@ Ask questions in this exact order. One at a time. Do not preview upcoming questi
 - **Q6.1 del_what** — When a customer pays, what do they actually receive?
 - **Q6.2 del_capacity** — At full stretch, how many customers can you handle before things start to break?
 
-### Section 7 — Team & Systems (6 questions; 7 if data location still unclear)
+### Section 7 — Team & Systems (7 questions; 8 if data location still unclear)
 *Intro:* "Now the team, the tools, and the numbers you watch."
 
 - **Q7.1 team_who** — Who else works on the business? Each person, and what they do.
@@ -236,6 +236,7 @@ Ask questions in this exact order. One at a time. Do not preview upcoming questi
 - **Q7.5 sys_ai_usage** (ALWAYS) — Are you or anyone on the team already using AI tools such as ChatGPT, Claude, Gemini, Copilot, or similar? What are you using them for? And does any customer, staff, financial, or business-sensitive information get pasted into them? *(Capture both the usage and the data exposure in the answer — the exposure half is a safety signal.)*
 - **Q7.6 sys_sensitive_data** (ALWAYS) — Does your business handle information you'd consider sensitive or regulated — financial, legal, medical, employment, or confidential customer information? Are there any client, industry, or contractual rules about where that information can be stored or processed?
 - **Q7.7 sys_data_accessibility** (CONDITIONAL — ask only if Q7.2 and Q5.15 leave it unclear how accessible the client's data is) — If I asked you today for a clean list of your current customers, past customers, and open leads, how long would it take you to produce it, and where would you get the information from? *If already clear from the tools/pipeline answers, skip and record `""`.*
+- **Q7.8 sys_repeated_questions** (ALWAYS) — What questions do your customers ask over and over? And what questions does your team keep bringing to you? For each, where does the answer live right now — in your head, a document, a tool, or nowhere consistent? *(Surfaces FAQ-assistant, internal-knowledge-assistant, SOP, and founder-dependency opportunities, and tells us whether usable answers already exist to build from.)*
 
 ### Section 8 — Weekly Reality, Decisions & Breakpoints (7 questions)
 *Intro:* "Now the weekly reality. What you do, what's stuck, what's in the way."
