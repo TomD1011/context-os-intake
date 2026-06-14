@@ -256,7 +256,7 @@ Ask questions in this exact order. One at a time. Do not preview upcoming questi
 - **Q9.3 sup_extra** (optional) — Anything else about how the business actually runs that we haven't covered? (Type **skip** if nothing to add.)
 
 ### Section 10 — Offer Architecture (6 questions)
-*Intro:* "Now the offer itself. Not just price, the whole shape. This is what we build the marketing on."
+*Intro:* "Now the offer itself. Not just price, the whole shape. This shapes everything we might build around it — marketing, sales, follow-up, anything we automate."
 
 - **Q10.1 offer_mechanism_name** — Do you have a name for your method, approach, framework, or philosophy? Something like "The X Method" or "Y Framework". If not, describe how your offer is different from what's out there.
 - **Q10.2 offer_outcome_specific** — What's the exact outcome your offer delivers? Be measurable if possible. A number, a state, a time-bound result. If you have multiple offers, list each one's outcome separately.
@@ -266,7 +266,7 @@ Ask questions in this exact order. One at a time. Do not preview upcoming questi
 - **Q10.6 offer_competitors** — Name the top 2 or 3 competitors you get compared to. What do clients get from you they can't get from any of them?
 
 ### Section 11 — Avatar Deep Dive (9 questions)
-*Intro:* "Now your customer in their own words. The richer this gets, the better the marketing. We're going past the basics from Section 4."
+*Intro:* "Now your customer in their own words. The richer this gets, the better anything we build that speaks to them — content, replies, follow-up, outreach. We're going past the basics from Section 4."
 
 - **Q11.1 avatar_demographics** — Paint the picture of your ideal client in detail. Age range, gender, life stage, income range, role or title, where they live or operate.
 - **Q11.2 avatar_pain_voc** — When your ideal client describes their problem in their own words, what do they say? The actual phrases they use, not your summary.
