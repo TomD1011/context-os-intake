@@ -113,6 +113,16 @@ export const INTAKE_TOOL: Anthropic.Tool = {
                 },
               },
               past_failures: { type: 'string' },
+              response_time: {
+                type: 'string',
+                description:
+                  'Q5.6b — Typical time for someone to respond to a new enquiry (call/form/DM/email). First human-response speed, distinct from time_to_cash.',
+              },
+              quote_flow: {
+                type: 'string',
+                description:
+                  'Q5.6c (conditional) — Quotes/proposals/estimates sent per month, what happens after sending, and how many are followed up. Empty string if the business does not send quotes (note in unresolved_gaps).',
+              },
             },
             required: [
               'lead_sources',
@@ -125,6 +135,8 @@ export const INTAKE_TOOL: Anthropic.Tool = {
               'content_channels',
               'existing_assets',
               'past_failures',
+              'response_time',
+              'quote_flow',
             ],
           },
           delivery: stringObject([
@@ -134,7 +146,15 @@ export const INTAKE_TOOL: Anthropic.Tool = {
             'current_capacity',
           ]),
           team: stringObject(['who_works_on_it', 'next_hire', 'operating_rhythm']),
-          systems: stringObject(['tools_in_use', 'automations', 'numbers_reviewed']),
+          systems: stringObject([
+            'tools_in_use',
+            'automations',
+            'numbers_reviewed',
+            'ai_usage', // Q7.5 — current AI tool use + whether sensitive data is pasted in (usage + exposure)
+            'sensitive_data', // Q7.6 — sensitive/regulated data held + storage/processing rules
+            'data_accessibility', // Q7.7 (conditional) — how fast a clean customer/lead list can be produced; empty if already clear from tools/pipeline
+            'repeated_questions', // Q7.8 — repeated customer/team questions + where the answers currently live
+          ]),
           constraints: stringObject([
             'weekly_revenue_actions',
             'inconsistencies',
@@ -144,6 +164,7 @@ export const INTAKE_TOOL: Anthropic.Tool = {
             'system_breakpoints',
             'what_has_been_tried',
             'founder_perceived_bottleneck',
+            'automation_boundaries', // Q8.7 — never-automate boundary, in the founder's own words
           ]),
           temporal: stringObject(['seasonality_and_milestones']),
         },

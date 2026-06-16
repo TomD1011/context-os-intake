@@ -67,6 +67,8 @@ export interface BrainAcquisition {
   follow_up_process: string
   conversion_rate: string
   time_to_cash: string
+  response_time: string // Q5.6b — first-response speed to a new enquiry
+  quote_flow: string // Q5.6c (conditional) — quote/proposal volume + follow-up
   referral_share: string
 }
 
@@ -86,6 +88,10 @@ export interface BrainOperations {
     tools_in_use: string
     automations: string
     numbers_reviewed: string
+    ai_usage: string // Q7.5 — current AI tool use + data exposure
+    sensitive_data: string // Q7.6 — sensitive/regulated data + storage rules
+    data_accessibility: string // Q7.7 (conditional) — clean-list production time/source
+    repeated_questions: string // Q7.8 — repeated customer/team questions + where answers live
   }
 }
 
@@ -98,6 +104,7 @@ export interface BrainConstraints {
   system_breakpoints: string
   what_has_been_tried: string
   founder_perceived_bottleneck: string
+  automation_boundaries: string // Q8.7 — never-automate boundary, founder's words
   seasonality_and_milestones: string
   additional_context: string
   unresolved_gaps: string[]
@@ -331,6 +338,8 @@ export function extractDomains(summary: Record<string, unknown>): BrainDomains {
       follow_up_process: pipeline.follow_up_process ?? acquisition.no_buy_process ?? '',
       conversion_rate: acquisition.conversion_rate ?? pipeline.conversion_rate ?? '',
       time_to_cash: acquisition.time_to_cash ?? '',
+      response_time: acquisition.response_time ?? '',
+      quote_flow: acquisition.quote_flow ?? '',
       referral_share: acquisition.referral_share ?? pipeline.referral_share ?? '',
     },
 
@@ -350,6 +359,10 @@ export function extractDomains(summary: Record<string, unknown>): BrainDomains {
         tools_in_use: rawTools,
         automations: systems.automations ?? '',
         numbers_reviewed: systems.numbers_reviewed ?? '',
+        ai_usage: systems.ai_usage ?? '',
+        sensitive_data: systems.sensitive_data ?? '',
+        data_accessibility: systems.data_accessibility ?? '',
+        repeated_questions: systems.repeated_questions ?? '',
       },
     },
 
@@ -362,6 +375,7 @@ export function extractDomains(summary: Record<string, unknown>): BrainDomains {
       system_breakpoints: constraints.system_breakpoints ?? '',
       what_has_been_tried: constraints.what_has_been_tried ?? '',
       founder_perceived_bottleneck: constraints.founder_perceived_bottleneck ?? '',
+      automation_boundaries: constraints.automation_boundaries ?? '',
       seasonality_and_milestones: temporal.seasonality_and_milestones ?? '',
       additional_context: s.additional_context ?? '',
       unresolved_gaps: s.unresolved_gaps ?? [],
